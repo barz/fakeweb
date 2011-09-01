@@ -13,17 +13,18 @@ module FakeWeb
     end
 
     def register_uri(method, uri, options)
-      uri_map[normalize_uri(uri)][method] = [*[options]].flatten.collect do |option|
-        FakeWeb::Responder.new(method, uri, option, option[:times])
+      uri_map[normalize_uri(uri)][method] ||= []
+      [*[options]].flatten.collect do |option|
+        uri_map[normalize_uri(uri)][method] << FakeWeb::Responder.new(method, uri, option, option[:times])
       end
     end
 
-    def registered_uri?(method, uri)
-      !responders_for(method, uri).empty?
+    def registered_uri?(method, uri, parameters = {})
+      !responders_for(method, uri, parameters).empty?
     end
 
-    def response_for(method, uri, &block)
-      responders = responders_for(method, uri)
+    def response_for(method, uri, parameters = {}, &block)
+      responders = responders_for(method, uri, parameters)
       return nil if responders.empty?
 
       next_responder = responders.last
@@ -54,17 +55,17 @@ module FakeWeb
 
     private
 
-    def responders_for(method, uri)
+    def responders_for(method, uri, parameters = {})
       uri = normalize_uri(uri)
 
-      uri_map_matches(uri_map, method, uri, URI) ||
-      uri_map_matches(uri_map, :any,   uri, URI) ||
-      uri_map_matches(uri_map, method, uri, Regexp) ||
-      uri_map_matches(uri_map, :any,   uri, Regexp) ||
+      uri_map_matches(uri_map, method, uri, URI, parameters) ||
+      uri_map_matches(uri_map, :any,   uri, URI, parameters) ||
+      uri_map_matches(uri_map, method, uri, Regexp, parameters) ||
+      uri_map_matches(uri_map, :any,   uri, Regexp, parameters) ||
       []
     end
 
-    def uri_map_matches(map, method, uri, type_to_check = URI)
+    def uri_map_matches(map, method, uri, type_to_check = URI, parameters = {})
       uris_to_check = variations_of_uri_as_strings(uri)
 
       matches = map.select { |registered_uri, method_hash|
@@ -82,9 +83,12 @@ module FakeWeb
           "More than one registered URI matched this request: #{method.to_s.upcase} #{uri}"
       end
 
-      matches.map { |_, method_hash| method_hash[method] }.first
+      if parameters.empty? || !parameters.is_a?(Hash) || method == :get
+        matches.map { |_, method_hash| method_hash[method] }.first
+      else
+        matches.values.select{ |r| r[method] }.first[method].select{ |r| r.parameters == parameters[:parameters] || r.parameters == :any}
+      end
     end
-
 
     def variations_of_uri_as_strings(uri_object)
       normalized_uri = normalize_uri(uri_object.dup)

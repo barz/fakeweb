@@ -1,4 +1,5 @@
 require 'singleton'
+require 'ruby-debug'
 
 require 'fake_web/ext/net_http'
 require 'fake_web/registry'
@@ -94,19 +95,19 @@ module FakeWeb
   #   to a valid filesystem path, the contents of that file will be read and used
   #   as the body of the response instead. (This used to be two options,
   #   <tt>:string</tt> and <tt>:file</tt>, respectively. These are now deprecated.)
-  # <tt>:response</tt>:: 
+  # <tt>:response</tt>::
   #   Either a <tt>Net::HTTPResponse</tt>, +IO+, +StringIO+, or +String+, which
   #   is used as the full response for the request.
-  # 
+  #
   #   The easier way by far is to pass the <tt>:response</tt> option to
   #   +register_uri+ as a +String+ or an (open for reads) +IO+ object which
   #   will be used as the complete HTTP response, including headers and body.
   #   If the string points to a readable file, this file will be used as the
   #   content for the request.
-  # 
+  #
   #   To obtain a complete response document, you can use the +curl+ command,
   #   like so:
-  #   
+  #
   #     curl -i http://example.com > response_from_example.com
   #
   #   which can then be used in your test environment like so:
@@ -116,7 +117,7 @@ module FakeWeb
   #   See the <tt>Net::HTTPResponse</tt>
   #   documentation[http://ruby-doc.org/stdlib/libdoc/net/http/rdoc/classes/Net/HTTPResponse.html]
   #   for more information on creating custom response objects.
-  # 
+  #
   # +options+ may also be an +Array+ containing a list of the above-described
   # +Hash+. In this case, FakeWeb will rotate through each response. You can
   # optionally repeat a response more than once before rotating:
@@ -165,13 +166,13 @@ module FakeWeb
   # Returns the faked Net::HTTPResponse object associated with +method+ and +uri+.
   def self.response_for(*args, &block) #:nodoc: :yields: response
     case args.length
-    when 2
+    when 2, 3
       Registry.instance.response_for(*args, &block)
     when 1
       print_missing_http_method_deprecation_warning(*args)
       Registry.instance.response_for(:any, *args, &block)
     else
-      raise ArgumentError.new("wrong number of arguments (#{args.length} for 2)")
+      raise ArgumentError.new("wrong number of arguments (#{args.length} greather than 3)")
     end
   end
 
@@ -182,13 +183,13 @@ module FakeWeb
   # Specify a method of <tt>:any</tt> to check against all HTTP methods.
   def self.registered_uri?(*args)
     case args.length
-    when 2
+    when 2, 3
       Registry.instance.registered_uri?(*args)
     when 1
       print_missing_http_method_deprecation_warning(*args)
       Registry.instance.registered_uri?(:any, *args)
     else
-      raise ArgumentError.new("wrong number of arguments (#{args.length} for 2)")
+      raise ArgumentError.new("wrong number of arguments (#{args.length} greater than 3)")
     end
   end
 

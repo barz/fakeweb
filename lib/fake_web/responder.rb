@@ -1,12 +1,24 @@
+require 'cgi'
+
 module FakeWeb
   class Responder #:nodoc:
 
-    attr_accessor :method, :uri, :options, :times
+    attr_accessor :method, :uri, :options, :times, :parameters
     KNOWN_OPTIONS = [:body, :exception, :response, :status].freeze
 
     def initialize(method, uri, options, times)
       self.method = method
       self.uri = uri
+      if options[:parameters]
+        if method == :post
+          self.parameters = options.delete(:parameters)
+        else
+          options.delete(:parameters)
+          self.parameters = nil
+          $stderr.puts
+          $stderr.puts "Warning: :parameters option ignored for method #{method}"
+        end
+      end
       self.options = options
       self.times = times ? times : 1
 
