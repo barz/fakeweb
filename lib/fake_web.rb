@@ -1,5 +1,4 @@
 require 'singleton'
-require 'ruby-debug'
 
 require 'fake_web/ext/net_http'
 require 'fake_web/registry'
