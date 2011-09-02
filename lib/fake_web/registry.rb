@@ -83,10 +83,15 @@ module FakeWeb
           "More than one registered URI matched this request: #{method.to_s.upcase} #{uri}"
       end
 
-      if parameters.empty? || !parameters.is_a?(Hash) || method == :get
+      if parameters.empty? || parameters[:parameters].empty? || !parameters.is_a?(Hash) || method == :get
         matches.map { |_, method_hash| method_hash[method] }.first
       else
-        matches.values.select{ |r| r[method] }.first[method].select{ |r| r.parameters == parameters[:parameters] || r.parameters == :any}
+        match = matches.values.select{ |r| r[method] }.first[method].select{ |r| r.parameters == parameters[:parameters] }
+        unless match.empty?
+          return match
+        else
+          matches.values.select{ |r| r[method] }.first[method].select{ |r| r.parameters == :any }
+        end
       end
     end
 

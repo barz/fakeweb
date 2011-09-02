@@ -12,6 +12,7 @@ module FakeWeb
       if options[:parameters]
         if method == :post
           self.parameters = options.delete(:parameters)
+          self.parameters.symbolize_keys! if self.parameters.is_a?(Hash)
         else
           options.delete(:parameters)
           self.parameters = nil

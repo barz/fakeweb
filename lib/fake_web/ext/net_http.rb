@@ -41,10 +41,12 @@ module Net  #:nodoc: all
       uri = FakeWeb::Utility.request_uri_as_string(self, request)
       method = request.method.downcase.to_sym
 
-      if FakeWeb.registered_uri?(method, uri)
+      parameters = FakeWeb::Utility.get_request_parameters(request)
+
+      if FakeWeb.registered_uri?(method, uri, parameters)
         @socket = Net::HTTP.socket_type.new
         FakeWeb::Utility.produce_side_effects_of_net_http_request(request, body)
-        FakeWeb.response_for(method, uri, &block)
+        FakeWeb.response_for(method, uri, parameters, &block)
       elsif FakeWeb.allow_net_connect?(uri)
         connect_without_fakeweb
         request_without_fakeweb(request, body, &block)

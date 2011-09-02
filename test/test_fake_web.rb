@@ -286,7 +286,7 @@ class TestFakeWeb < Test::Unit::TestCase
   end
 
   def test_mock_post_with_body_using_other_syntax_sets_the_request_body
-    FakeWeb.register_uri(:post, "http://example.com/posts", :status => [201, "Created"])
+    FakeWeb.register_uri(:post, "http://example.com/posts", :parameters => {:title => "Test"}, :status => [201, "Created"])
     http = Net::HTTP.new("example.com")
     request = Net::HTTP::Post.new("/posts")
     request.body = "title=Test"
@@ -423,7 +423,7 @@ class TestFakeWeb < Test::Unit::TestCase
     FakeWeb.register_uri(:post, 'http://mock/raising_exception.txt', :exception => StandardError)
     assert_raises(StandardError) do
       Net::HTTP.start('mock') do |query|
-        query.post('/raising_exception.txt', 'some data')
+        query.post('/raising_exception.txt', '')
       end
     end
   end
@@ -634,8 +634,18 @@ class TestFakeWeb < Test::Unit::TestCase
     FakeWeb.register_uri(:post, "http://example.com", :body => "Body: p2 => v2, p3 => v3", :parameters => {:p2 => 'v2', :p3 => 'v3'})
     FakeWeb.register_uri(:post, "http://example.com", :body => "Any parameter no matching", :parameters => :any)
 
-    response = Net::HTTP.post_form(URI.parse('http://example.com/'), {})
+    uri = URI.parse("http://example.com")
+    http = Net::HTTP.new(uri.host, uri.port)
+    request = Net::HTTP::Post.new(uri.request_uri)
+    response = http.request(request)
     assert_equal 'No parameters', response.body
+
+    uri = URI.parse("http://example.com")
+    http = Net::HTTP.new(uri.host, uri.port)
+    request = Net::HTTP::Post.new(uri.request_uri)
+    request.set_form_data({:p1 => 'v1'})
+    response = http.request(request)
+    assert_equal "Body: p1 => v1", response.body
 
     response = Net::HTTP.post_form(URI.parse('http://example.com/'), {:p1 => 'v1'})
     assert_equal "Body: p1 => v1", response.body
@@ -645,6 +655,7 @@ class TestFakeWeb < Test::Unit::TestCase
 
     response = Net::HTTP.post_form(URI.parse('http://example.com/'), {:p4 => 'v4'})
     assert_equal "Any parameter no matching", response.body
+
   end
 
   def test_version

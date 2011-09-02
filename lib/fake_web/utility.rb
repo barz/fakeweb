@@ -1,5 +1,16 @@
+require 'cgi'
+
 module FakeWeb
   module Utility #:nodoc:
+
+    def self.get_request_parameters(request)
+      return {} if request.nil? || request.method == :get || request.body.nil? || request.content_type != "application/x-www-form-urlencoded"
+      params = CGI.parse(request.body).inject({}) do |h, (k,v) |
+        h[k.to_sym] = v.first
+        h
+      end
+      {:parameters => params}
+    end
 
     def self.decode_userinfo_from_header(header)
       header.sub(/^Basic /, "").unpack("m").first
