@@ -10,7 +10,7 @@ module FakeWeb
       self.method = method
       self.uri = uri
       if options[:parameters]
-        if method == :post
+        if method == :post || method == :put
           self.parameters = options.delete(:parameters)
           self.parameters.symbolize_keys! if self.parameters.is_a?(Hash)
         else

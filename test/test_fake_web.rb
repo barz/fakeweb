@@ -618,6 +618,16 @@ class TestFakeWeb < Test::Unit::TestCase
     assert FakeWeb.registered_uri?(:post, "http://example.com/users", :parameters => :any)
   end
 
+  def test_register_uri_for_post_method_with_parameters
+    FakeWeb.register_uri(:put, "http://example.com/users", :body => "User list 1", :parameters => {:p1 => 'v1'})
+    FakeWeb.register_uri(:put, "http://example.com/users", :body => "User list 2", :parameters => :any)
+
+    assert_equal 2, FakeWeb::Registry.instance.uri_map.values.first[:put].size
+
+    assert FakeWeb.registered_uri?(:put, "http://example.com/users", :parameters => {:p1 => 'v1'})
+    assert FakeWeb.registered_uri?(:put, "http://example.com/users", :parameters => :any)
+  end
+
   def test_response_for_post_method_with_parameters
     FakeWeb.register_uri(:post, "http://example.com/users", :body => "User list 1", :parameters => {:p1 => 'v1'})
     FakeWeb.register_uri(:post, "http://example.com/users", :body => "User list 2", :parameters => :any)
@@ -626,6 +636,16 @@ class TestFakeWeb < Test::Unit::TestCase
     assert_equal 'User list 1', FakeWeb.response_for(:post, "http://example.com/users", :parameters => {:p1 => 'v1'}).body
     assert_equal 'User list 2', FakeWeb.response_for(:post, "http://example.com/users", :parameters => {:p2 => 'v2'}).body
     assert_equal 'User list 3', FakeWeb.response_for(:post, "http://example.com/users").body
+  end
+
+  def test_response_for_post_method_with_parameters
+    FakeWeb.register_uri(:put, "http://example.com/users", :body => "User list 1", :parameters => {:p1 => 'v1'})
+    FakeWeb.register_uri(:put, "http://example.com/users", :body => "User list 2", :parameters => :any)
+    FakeWeb.register_uri(:put, "http://example.com/users", :body => "User list 3")
+
+    assert_equal 'User list 1', FakeWeb.response_for(:put, "http://example.com/users", :parameters => {:p1 => 'v1'}).body
+    assert_equal 'User list 2', FakeWeb.response_for(:put, "http://example.com/users", :parameters => {:p2 => 'v2'}).body
+    assert_equal 'User list 3', FakeWeb.response_for(:put, "http://example.com/users").body
   end
 
   def test_register_multiple_post_request_to_a_same_uri_and_different_parameters
@@ -655,7 +675,40 @@ class TestFakeWeb < Test::Unit::TestCase
 
     response = Net::HTTP.post_form(URI.parse('http://example.com/'), {:p4 => 'v4'})
     assert_equal "Any parameter no matching", response.body
+  end
 
+  def test_register_multiple_post_request_to_a_same_uri_and_different_parameters
+    FakeWeb.register_uri(:put, "http://example.com", :body => "No parameters")
+    FakeWeb.register_uri(:put, "http://example.com", :body => "Body: p1 => v1", :parameters => {:p1 => 'v1'})
+    FakeWeb.register_uri(:put, "http://example.com", :body => "Body: p2 => v2, p3 => v3", :parameters => {:p2 => 'v2', :p3 => 'v3'})
+    FakeWeb.register_uri(:put, "http://example.com", :body => "Any parameter no matching", :parameters => :any)
+
+    uri = URI.parse("http://example.com")
+    http = Net::HTTP.new(uri.host, uri.port)
+    request = Net::HTTP::Put.new(uri.request_uri)
+    response = http.request(request)
+    assert_equal 'No parameters', response.body
+
+    uri = URI.parse("http://example.com")
+    http = Net::HTTP.new(uri.host, uri.port)
+    request = Net::HTTP::Put.new(uri.request_uri)
+    request.set_form_data({:p1 => 'v1'})
+    response = http.request(request)
+    assert_equal "Body: p1 => v1", response.body
+
+    uri = URI.parse("http://example.com")
+    http = Net::HTTP.new(uri.host, uri.port)
+    request = Net::HTTP::Put.new(uri.request_uri)
+    request.set_form_data({:p2 => 'v2', :p3 => 'v3'})
+    response = http.request(request)
+    assert_equal "Body: p2 => v2, p3 => v3", response.body
+
+    uri = URI.parse("http://example.com")
+    http = Net::HTTP.new(uri.host, uri.port)
+    request = Net::HTTP::Put.new(uri.request_uri)
+    request.set_form_data({:p4 => 'v4'})
+    response = http.request(request)
+    assert_equal "Any parameter no matching", response.body
   end
 
   def test_version
