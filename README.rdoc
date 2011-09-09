@@ -3,7 +3,7 @@
 FakeWeb is a helper for faking web requests in Ruby. It works at a global
 level, without modifying code or writing extensive stubs.
 
-_<disclaimer>_
+_disclaimer_
 
 This is a forked version of _Fakeweb_. The reason to fork was to be able to test POST and PUT requests to a same URI but with different parameters. For example, look at this test:
 
@@ -14,8 +14,6 @@ In the way to achieve this, 5 tests about precedence get broken (you can check t
 So, the precende feature get broken: this feature is about what happen when you redefine the behaviour of an URI more than once.
 
 I'll try to fix this early.
-
-_</disclaimer>_
 
 == Installation
 
